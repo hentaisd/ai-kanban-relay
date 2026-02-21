@@ -2,11 +2,24 @@ const { WebSocketServer } = require('ws');
 const http = require('http');
 
 const PORT = process.env.PORT || 8080;
-
-const server = http.createServer();
-const wss = new WebSocketServer({ server });
-
 const clients = new Set();
+
+const server = http.createServer((req, res) => {
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      status: 'ok', 
+      service: 'ai-kanban-relay',
+      clients: clients.size,
+      timestamp: new Date().toISOString()
+    }));
+    return;
+  }
+  res.writeHead(404);
+  res.end('Not found');
+});
+
+const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws, req) => {
   const clientIp = req.socket.remoteAddress;
